@@ -119,7 +119,7 @@ public class Node {
     public void adjustVariableNames(){
         if(this.name.equals("NAME")){
             String updateName = "V" + variableCounter;
-            adjustVaraibleNamesHelper(this.children.get(0).name, updateName, this.children.get(0).id);
+            adjustVariableNamesHelper(this, this.children.get(0).name, updateName, this.children.get(0).scope, this.children.get(0).id);
             variableCounter++;
         }
         for (Node n : children){
@@ -127,24 +127,34 @@ public class Node {
         }
     }
 
-    public void adjustVaraibleNamesHelper(String saveName, String updateName, int id){
-        Node temp = this;
-        while(!temp.name.equals("CODE") /*&& !temp.name.equals("PROGTWO")*/){
-            temp = temp.parent;
-        }
+    public void adjustVariableNamesHelper(Node saveNode, String saveName, String updateName, String scope, int id){
+        Node temp = saveNode;
+        //if(scope.equals("0")){
+            while(!temp.name.equals("PROG") /*&& !temp.name.equals("PROGTWO")*/){
+                temp = temp.parent;
+            }
+        /*} else{
+            while(!temp.name.equals("CODE") /*&& !temp.name.equals("PROGTWO")*//*{
+                temp = temp.parent;
+            }*/
+        //}*/
 
         adjustVariableNamesHelper2(temp, saveName, updateName, id);
 
-        while(!temp.name.equals("PROG") /*&& !temp.name.equals("PROGTWO")*/){
+        /*while(!temp.name.equals("PROG") /*&& !temp.name.equals("PROGTWO")){
             temp = temp.parent;
         }
 
-        adjustVariableNamesHelper2(temp, saveName, updateName, id);
+        adjustVariableNamesHelper2(temp, saveName, updateName, id);*/
     }
 
     public void adjustVariableNamesHelper2(Node temp, String saveName, String updateName, int id){
-        if(temp.id >= id && temp.name.equals(saveName)){
-            temp.name = updateName;
+        if(temp.parent != null && temp.parent.parent != null) {
+            if (!temp.parent.parent.name.equals("CALL") && !temp.parent.name.equals("PROC")) {
+                if (temp.id >= id && temp.name.equals(saveName)) {
+                    temp.name = updateName;
+                }
+            }
         }
         for (Node n : temp.children){
             n.adjustVariableNamesHelper2(n, saveName, updateName, id);
@@ -154,7 +164,7 @@ public class Node {
     public void undefinedVariables(){
         if(this.name.equals("VAR")){
             if(!this.parent.name.equals("CALL")){
-                if(!this.children.get(0).name.matches("[V][0-9]")){
+                if(!this.children.get(0).name.matches("[V][0-9]+")){
                     if(!this.children.get(0).name.equals("0") && !this.children.get(0).name.equals("1")){
                         this.children.get(0).name = "U";
                     }
@@ -178,7 +188,7 @@ public class Node {
     }
 
     public void adjustProcedureNamesHelper(Node saveNode, String saveName, String updateName, int id, int scope){
-        Node temp = this;
+        Node temp = saveNode;
         while(!temp.name.equals("PROG")){
             if(temp.parent == null){
                 break;
@@ -197,25 +207,28 @@ public class Node {
 
         //adjustProcedureNamesHelper2(temp, saveName, updateName, id, scope);
 
-        adjustProcedureNamesHelper3(saveNode, saveName, updateName);
+        //adjustProcedureNamesHelper3(saveNode, saveName, updateName);
     }
 
     public void adjustProcedureNamesHelper2(Node temp, String saveName, String updateName, int id, int scope){
-        if((!this.parent.name.equals("NAME") && !this.parent.name.equals("VAR")) || this.parent.parent.name.equals("CALL")) {
+        if(temp.name.equals("CALL")) {
             int tempScope = Integer.parseInt(temp.scope);
-            if (!temp.name.matches("[P][0-9]") && ((tempScope <= scope && temp.name.equals(saveName)) || (temp.id == id && temp.name.equals(saveName)))) {
-                if (this.id <= id) {
+            if (!temp.children.get(0).children.get(0).name.matches("[P][0-9]")) {
+                if (temp.children.get(0).children.get(0).name.equals(saveName) /*&& temp.children.get(0).children.get(0).id <= id*/) {
                     //if(!temp.name.matches("[P][0-9]")){
-                        temp.name = updateName;
+                    temp.children.get(0).children.get(0).name = updateName;
                     //}
-                } else if(tempScope <= scope && temp.name.equals(saveName)){
-                    temp.name = updateName;
+                } else if(tempScope <= scope && temp.children.get(0).children.get(0).name.equals(saveName)){
+                    temp.children.get(0).children.get(0).name = updateName;
                 }
             } /*else if (tempScope >= scope && temp.name.equals(saveName)) {
-                if(this.id >= id){
-                    temp.name = updateName;
-                }
-            }*/
+                //if(this.id >= id){
+                    //temp.name = updateName;
+                //}
+            //}*/
+        }
+        if(temp.id == id && temp.name.equals(saveName)){
+            temp.name = updateName;
         }
         for (Node n : temp.children){
             n.adjustProcedureNamesHelper2(n, saveName, updateName, id, scope);
@@ -235,7 +248,7 @@ public class Node {
 
     public void undefinedProcedures(){
         if(this.name.equals("CALL")){
-            if(!this.children.get(0).children.get(0).name.matches("[P][0-9]")){
+            if(!this.children.get(0).children.get(0).name.matches("[P][0-9]+")){
                 this.children.get(0).children.get(0).name = "U";
             }
         }
@@ -295,11 +308,6 @@ public class Node {
             }
         }
 
-        if(this.name.equals("T") || this.name.equals("F")){
-            this.type = "B";
-            this.parent.type = "B";
-        }
-
         if(this.name.equals("NUMEXPR")) {
             if(this.children.get(0).name.equals("VAR")){
                 if(this.children.get(0).type.equals("N")){
@@ -325,6 +333,8 @@ public class Node {
         }
 
         if(this.name.equals("CALC")){
+            this.children.get(1).setDefiniteTypes();
+            this.children.get(2).setDefiniteTypes();
             if(this.children.get(1).type.equals("N") && this.children.get(2).type.equals("N")){
                 this.type = "N";
                 this.children.get(0).type = "N";
@@ -373,7 +383,13 @@ public class Node {
         }
 
         if(this.name.equals("BOOL")){
+            if(this.children.get(0).name.equals("T") || this.children.get(0).name.equals("F")){
+                this.type = "B";
+                this.children.get(0).type = "B";
+            }
             if(this.children.get(0).name.equals("eq")){
+                //this.children.get(1).setDefiniteTypes();
+                //this.children.get(2).setDefiniteTypes();
                 if(this.children.get(1).type.equals(this.children.get(2).type)){
                     this.type = "B";
                     this.children.get(0).type = "B";
@@ -381,35 +397,51 @@ public class Node {
             }
             if(this.children.size() > 1){
                 if(this.children.get(1).name.equals("BOOLCOMP")){
+                    //this.children.get(0).setDefiniteTypes();
+                    //this.children.get(1).children.get(1).setDefiniteTypes();
                     String tempType = this.children.get(0).type;
                     String tempType2 = this.children.get(1).children.get(1).type;
                     if(tempType.equals("N") && tempType2.equals("N")){
                         this.type = "B";
+                        this.children.get(1).type = "B";
+                    } else{
+                        this.type = "N";
+                        this.children.get(1).type = "N";
                     }
                 }
             }
             if(this.children.get(0).name.equals("not")){
+                this.children.get(1).setDefiniteTypes();
                 if(this.children.get(1).type.equals("B")){
                     this.type = "B";
+                    this.children.get(0).type = "B";
                 }
             }
             if(this.children.get(0).name.equals("and")){
+                this.children.get(1).setDefiniteTypes();
+                this.children.get(2).setDefiniteTypes();
                 String tempType = this.children.get(1).type;
                 String tempType2 = this.children.get(2).type;
                 if(tempType.equals(tempType2)){
                     this.type = "B";
+                    this.children.get(0).type = "B";
                 }
             }
             if(this.children.get(0).name.equals("or")){
+                this.children.get(1).setDefiniteTypes();
+                this.children.get(2).setDefiniteTypes();
                 String tempType = this.children.get(1).type;
                 String tempType2 = this.children.get(2).type;
                 if(tempType.equals(tempType2)){
                     this.type = "B";
+                    this.children.get(0).type = "B";
                 }
             }
             if(this.children.get(0).name.equals("VAR")) {
-                if(this.children.get(0).type.equals("B")){
-                    this.type = "B";
+                if(this.children.get(0).children.get(0).type.equals("B")){
+                    if(this.type.equals("")){
+                        this.type = "B";
+                    }
                 }
             }
         }
@@ -433,7 +465,7 @@ public class Node {
                 if(this.children.get(0).type.equals("")){
                     this.type = correctType;
                     this.children.get(0).type = correctType;
-                    this.parent.type = correctType;
+                    //this.parent.type = correctType;
                 } else{
                     System.out.println("TYPE ERROR [line: " + this.token.line + ", col: " + this.token.col + "]: type already defined");
                 }
@@ -483,10 +515,15 @@ public class Node {
                 }
             }
             if (this.children.get(1).children.get(0).name.equals("NUMEXPR")) {
-                String testType = this.children.get(1).children.get(0).type;
+                String testType = this.children.get(1).children.get(0).children.get(0).type;
                 if(!(correctType.equals("N") && testType.equals("N"))){
-                    System.out.println("TYPE ERROR [line: " + this.children.get(1).children.get(0).token.line + ", col: " + this.children.get(1).children.get(0).token.col + "]: with assigning integer literal");
-                    errors = true;
+                    /*System.out.println(correctType);
+                    System.out.println(this.children.get(1).children.get(0).name);
+                    System.out.println(testType);*/
+                    if(!correctType.equals(testType)){
+                        System.out.println("TYPE ERROR [line: " + this.children.get(1).children.get(0).token.line + ", col: " + this.children.get(1).children.get(0).token.col + "]: with assigning integer literal");
+                        errors = true;
+                    }
                 }
             }
             if(this.children.get(1).children.get(0).name.equals("BOOL")){
@@ -509,6 +546,10 @@ public class Node {
 
         if(this.name.equals("COND_LOOP")){
             if(this.children.get(0).name.equals("while")){
+                /*System.out.println(this.id);
+                System.out.println(this.children.get(1).type);
+                System.out.println(this.children.get(1).children.get(0).type);
+                System.out.println(this.children.get(1).children.get(1).children.get(1).type);*/
                 if(!this.children.get(1).type.equals("B")){
                     System.out.println("TYPE ERROR [line: " + this.children.get(1).token.line + ", col: " + this.children.get(1).token.col + "]: check is not a boolean");
                     errors = true;
@@ -520,7 +561,7 @@ public class Node {
                 String tempType3 = this.children.get(2).type;
                 String tempType4 = this.children.get(3).children.get(1).type;
                 String tempType5 = this.children.get(4).children.get(0).type;
-                String tempType6 = this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).type;
+                String tempType6 = this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).type;
                 if(!tempType.equals("N")){
                     System.out.println("TYPE ERROR [line: " + this.children.get(1).children.get(0).token.line + ", col: " + this.children.get(1).children.get(0).token.col + "]: first initialization variable is not a number expression");
                     errors = true;
@@ -542,7 +583,7 @@ public class Node {
                     errors = true;
                 }
                 if(!tempType6.equals("N")){
-                    System.out.println("TYPE ERROR [line: " + this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).token.line + ", col: " + this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).token.col + "]: second increment variable is not a number expression");
+                    System.out.println("TYPE ERROR [line: " + this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).token.line + ", col: " + this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).token.col + "]: second increment variable is not a number expression");
                     errors = true;
                 }
             }
@@ -637,6 +678,7 @@ public class Node {
                 }
             }
             if(this.children.get(0).name.equals("CALC")){
+                this.children.get(0).setDefiniteValues();
                 if(this.children.get(0).value.equals("Has-Value")){
                     this.value = "Has-Value";
                 }
@@ -644,6 +686,8 @@ public class Node {
         }
 
         if(this.name.equals("CALC")){
+            this.children.get(1).setDefiniteValues();
+            this.children.get(2).setDefiniteValues();
             if(this.children.get(1).value.equals("Has-Value")){
                 if(this.children.get(2).value.equals("Has-Value")){
                     this.value = "Has-Value";
@@ -671,11 +715,14 @@ public class Node {
                 }
             }
             if(this.children.get(0).name.equals("not")){
+                this.children.get(1).setDefiniteValues();
                 if(this.children.get(1).children.get(0).value.equals("Has-Value")){
                     this.value = "Has-Value";
                 }
             }
             if(this.children.get(0).name.equals("and")){
+                this.children.get(1).setDefiniteValues();
+                this.children.get(2).setDefiniteValues();
                 if(this.children.get(1).children.get(0).value.equals("Has-Value")){
                     if(this.children.get(2).children.get(0).value.equals("Has-Value")){
                         this.value = "Has-Value";
@@ -683,6 +730,8 @@ public class Node {
                 }
             }
             if(this.children.get(0).name.equals("or")){
+                this.children.get(1).setDefiniteValues();
+                this.children.get(2).setDefiniteValues();
                 if(this.children.get(1).children.get(0).value.equals("Has-Value")){
                     if(this.children.get(2).children.get(0).value.equals("Has-Value")){
                         this.value = "Has-Value";
@@ -739,6 +788,12 @@ public class Node {
                 }
             }
         }
+        if(this.name.equals("ASSIGN")){
+            if(!this.children.get(1).children.get(0).value.equals("Has-Value")){
+                System.out.println("VALUE ERROR [line: " + this.children.get(1).children.get(0).token.line + ", col: " + this.children.get(1).children.get(0).token.col + "]: assignment does not have value");
+                errors = true;
+            }
+        }
 
         if(this.name.equals("COND_BRANCH")){
             if(!this.children.get(1).value.equals("Has-Value")){
@@ -760,7 +815,7 @@ public class Node {
                 String tempType3 = this.children.get(2).value;
                 String tempType4 = this.children.get(3).children.get(1).value;
                 String tempType5 = this.children.get(4).children.get(0).value;
-                String tempType6 = this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).value;
+                String tempType6 = this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).value;
                 if(!tempType.equals("Has-Value")){
                     System.out.println("VALUE ERROR [line: " + this.children.get(1).children.get(0).token.line + ", col: " + this.children.get(1).children.get(0).token.col + "]: first initialization variable does not have value");
                     errors = true;
@@ -782,7 +837,7 @@ public class Node {
                     errors = true;
                 }
                 if(!tempType6.equals("Has-Value")){
-                    System.out.println("VALUE ERROR [line: " + this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).token.line + ", col: " + this.children.get(5).children.get(0).children.get(0).children.get(1).children.get(0).token.col + "]: second increment variable does not have value");
+                    System.out.println("VALUE ERROR [line: " + this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).token.line + ", col: " + this.children.get(4).children.get(1).children.get(0).children.get(0).children.get(1).children.get(0).token.col + "]: second increment variable does not have value");
                     errors = true;
                 }
             }

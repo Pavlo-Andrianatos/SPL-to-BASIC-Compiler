@@ -567,7 +567,7 @@ public class LL1Parser {
         Token temp = input;
         Node n1Temp = null;
         if(input.type == Token.token_type.VAR || (input.type == Token.token_type.INT && input.value.equals("0"))){
-            if(tokens.get(1).value.equals(";")){
+            if(tokens.size() == 1 || tokens.get(1).value.equals(";")){
                 n1Temp = parseVAR();
                 /*while(input.value.equals(";")){
                     match(";");

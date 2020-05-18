@@ -43,7 +43,7 @@ public class Scoping {
         return tree;
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         //First tested input file
         String inputName = "input.txt";
         new Scoping(inputName);
@@ -51,5 +51,5 @@ public class Scoping {
         //Second tested input file
         //String inputName = "input1.txt";
         //new Scoping(inputName);
-    }
+    }*/
 }
