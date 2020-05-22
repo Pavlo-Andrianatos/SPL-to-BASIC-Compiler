@@ -940,7 +940,6 @@ public class Node {
                 if(node.children.get(1).type.equals("S")) {
                     writer.write(basicLineNumber + " INPUT");
                     writeToBASICPhaseOne(node.children.get(1), writer);
-                    writer.write("$");
                 } else{
                     writer.write(basicLineNumber + " INPUT");
                     writeToBASICPhaseOne(node.children.get(1), writer);
@@ -953,7 +952,6 @@ public class Node {
                 if(node.children.get(1).type.equals("S")) {
                     writer.write(basicLineNumber + " PRINT");
                     writeToBASICPhaseOne(node.children.get(1), writer);
-                    writer.write("$");
                 } else{
                     writer.write(basicLineNumber + " PRINT");
                     writeToBASICPhaseOne(node.children.get(1), writer);
@@ -974,18 +972,84 @@ public class Node {
             node.children.get(0).writtenToBASIC = true;
         }
         if(node.name.equals("VAR")){
-            writer.write(" " + node.children.get(0).name);
-            node.writtenToBASIC = true;
-            node.children.get(0).writtenToBASIC = true;
+            if(!node.children.get(0).writtenToBASIC){
+                if(node.type.equals("S")) {
+                    writer.write(" " + node.children.get(0).name + "$");
+                    node.writtenToBASIC = true;
+                    node.children.get(0).writtenToBASIC = true;
+                } else{
+                    writer.write(" " + node.children.get(0).name);
+                    node.writtenToBASIC = true;
+                    node.children.get(0).writtenToBASIC = true;
+                }
+            }
         }
         if(node.name.equals("ASSIGN")){
-            writer.write(basicLineNumber + "");
-            writeToBASICPhaseOne(node.children.get(0), writer);
-            writer.write(" =");
-            writeToBASICPhaseOne(node.children.get(1), writer);
-            node.writtenToBASIC = true;
-            node.children.get(0).writtenToBASIC = true;
-            node.children.get(1).writtenToBASIC = true;
+            if(!node.children.get(1).children.get(0).name.equals("BOOL")){
+                if(!node.children.get(1).children.get(0).writtenToBASIC){
+                    writer.write(basicLineNumber + "");
+                    writeToBASICPhaseOne(node.children.get(0), writer);
+                    writer.write(" =");
+                    writeToBASICPhaseOne(node.children.get(1), writer);
+                    node.writtenToBASIC = true;
+                    node.children.get(0).writtenToBASIC = true;
+                    node.children.get(1).writtenToBASIC = true;
+                }
+            } else{
+                if(node.children.get(1).children.get(0).children.get(0).name.equals("VAR") || node.children.get(1).children.get(0).children.get(0).name.equals("T") || node.children.get(1).children.get(0).children.get(0).name.equals("F")){
+                    if(node.children.get(1).children.get(0).children.size() > 1 && node.children.get(1).children.get(0).children.get(1).name.equals("BOOLCOMP")){
+                        if(!node.children.get(1).children.get(0).children.get(0).writtenToBASIC) {
+                            writer.write(basicLineNumber + "");
+                            writeToBASICPhaseOne(node.children.get(0), writer);
+                            writer.write(" =");
+                            //writeToBASICPhaseOne(node.children.get(1), writer);
+                            writer.write(" " + node.children.get(1).children.get(0).children.get(0).children.get(0).name);
+                            writer.write(" " + node.children.get(1).children.get(0).children.get(1).children.get(0).name + " ");
+                            writer.write(node.children.get(1).children.get(0).children.get(1).children.get(1).children.get(0).name);
+                            basicLineNumber += 10;
+                            writer.write("\n");
+                            node.writtenToBASIC = true;
+                            node.children.get(0).writtenToBASIC = true;
+                            node.children.get(1).writtenToBASIC = true;
+                            node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                            node.children.get(1).children.get(0).children.get(0).children.get(0).writtenToBASIC = true;
+                            node.children.get(1).children.get(0).children.get(1).children.get(1).children.get(0).writtenToBASIC = true;
+                        }
+                    } else if(!node.children.get(1).children.get(0).children.get(0).writtenToBASIC){
+                        writer.write(basicLineNumber + "");
+                        writeToBASICPhaseOne(node.children.get(0), writer);
+                        writer.write(" =");
+                        writeToBASICPhaseOne(node.children.get(1), writer);
+                        node.writtenToBASIC = true;
+                        node.children.get(0).writtenToBASIC = true;
+                        node.children.get(1).writtenToBASIC = true;
+                        node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                    }
+                } else if(node.children.get(1).children.get(0).children.get(0).name.equals("or")){
+                    if(!node.children.get(1).children.get(0).children.get(0).writtenToBASIC) {
+                        writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
+                        writer.write(basicLineNumber + " " + node.children.get(0).children.get(0).name);
+                        writer.write(" =");
+                        writer.write(" ORCOMPTHREE");
+                        node.writtenToBASIC = true;
+                        node.children.get(1).children.get(0).writtenToBASIC = true;
+                        node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                        node.children.get(0).children.get(0).writtenToBASIC = true;
+                    }
+                } else if(node.children.get(1).children.get(0).children.get(0).name.equals("and")){
+                    if(!node.children.get(1).children.get(0).children.get(0).writtenToBASIC) {
+                        writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
+                        writer.write(basicLineNumber + " " + node.children.get(0).children.get(0).name);
+                        writer.write(" =");
+                        writer.write(" ANDCOMP");
+                        node.writtenToBASIC = true;
+                        node.children.get(1).children.get(0).writtenToBASIC = true;
+                        node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                        node.children.get(0).children.get(0).writtenToBASIC = true;
+                        node.children.get(0).writtenToBASIC = true;
+                    }
+                }
+            }
         }
         if(node.name.equals("ASSIGNTWO")){
             if(node.children.get(0).name.startsWith("\"")){
@@ -1037,14 +1101,42 @@ public class Node {
         if(node.name.equals("COND_BRANCH")){
             gotoNumber += 1;
             int tempGoToNumber = gotoNumber;
-            if(node.children.get(1).children.get(0).name.equals("VAR")){
+            if(!(node.children.get(1).children.size() > 1 && node.children.get(1).children.get(1).name.equals("BOOLCOMP")) && node.children.get(1).children.get(0).name.equals("VAR")){
                 writer.write(basicLineNumber + " IF");
 
                 writeToBASICPhaseOne(node.children.get(1), writer);
                 writer.write(" THEN GOTO G_" + tempGoToNumber);
                 basicLineNumber += 10;
                 writer.write("\n");
-            } else{
+            }else if (node.children.get(1).children.get(0).name.equals("not")){
+                writeToBASICPhaseOne(node.children.get(1), writer);
+                writer.write(basicLineNumber + " IF " + node.children.get(1).children.get(1).children.get(0).children.get(0).name);
+                writer.write(" THEN GOTO G_" + tempGoToNumber);
+                basicLineNumber += 10;
+                writer.write("\n");
+            } else if(node.children.get(1).children.get(0).name.equals("and")){
+                writeToBASICPhaseOne(node.children.get(1), writer);
+                //basicLineNumber += 10;
+                //writer.write("\n");
+
+                writer.write(basicLineNumber + " IF");
+
+                writer.write(" ANDCOMP");
+                writer.write(" THEN GOTO G_" + tempGoToNumber);
+                basicLineNumber += 10;
+                writer.write("\n");
+            } else if(node.children.get(1).children.get(0).name.equals("or")){
+                writeToBASICPhaseOne(node.children.get(1), writer);
+                //basicLineNumber += 10;
+                //writer.write("\n");
+
+                writer.write(basicLineNumber + " IF");
+
+                writer.write(" ORCOMPTHREE");
+                writer.write(" THEN GOTO G_" + tempGoToNumber);
+                basicLineNumber += 10;
+                writer.write("\n");
+            }else{
                 writeToBASICPhaseOne(node.children.get(1), writer);
                 //basicLineNumber += 10;
                 //writer.write("\n");
@@ -1073,7 +1165,7 @@ public class Node {
                 writeToBASICPhaseOne(node.children.get(3), writer);
 
                 writer.write(basicLineNumber + " GOTO G_" + tempGoToNumber + " if");
-                basicLineNumber += 10;
+                //basicLineNumber += 10;
                 writer.write("\n");
                 node.children.get(3).writtenToBASIC = true;
             }
@@ -1084,8 +1176,6 @@ public class Node {
         if(node.name.equals("BOOL")){
             if(node.children.get(0).name.equals("and")){
                 if(node.children.get(1).children.get(0).name.equals("VAR")){
-                    //ANDCOMP = child 1 * child 2
-                    //ONE = 0
                     writer.write(basicLineNumber + " ONE = 1");
                     basicLineNumber += 10;
                     writer.write("\n");
@@ -1098,9 +1188,9 @@ public class Node {
                     basicLineNumber += 10;
                     writer.write("\n");
 
-                    writer.write(basicLineNumber + " IF ANDCOMP THEN GOTO G_" + gotoNumber);
+                    /*writer.write(basicLineNumber + " IF ANDCOMP THEN GOTO G_" + gotoNumber);
                     basicLineNumber += 10;
-                    writer.write("\n");
+                    writer.write("\n");*/
                     /*writer.write(basicLineNumber + " GOTO G_" + gotoNumber);
                     basicLineNumber += 10;
                     writer.write("\n");
@@ -1110,31 +1200,46 @@ public class Node {
                     //gotoNumber += 1;
                     node.children.get(1).writtenToBASIC = true;
                     node.children.get(1).children.get(0).writtenToBASIC = true;
+                    node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                    node.children.get(2).children.get(0).children.get(0).writtenToBASIC = true;
                 } else{
                     writeToBASICPhaseOne(node.children.get(1), writer);
                     node.children.get(1).writtenToBASIC = true;
                 }
                 node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("or")){
+            } else if(node.children.get(0).name.equals("or")){
                 if(node.children.get(1).children.get(0).name.equals("VAR")){
-                    writer.write(basicLineNumber + " IF " + node.children.get(1).children.get(0).children.get(0).name + " THEN GOTO G_" + gotoNumber);
+                    writer.write(basicLineNumber + " ORCOMPONE = " + node.children.get(1).children.get(0).children.get(0).name + " + " + node.children.get(2).children.get(0).children.get(0).name);
                     basicLineNumber += 10;
                     writer.write("\n");
-                    writer.write(basicLineNumber + " IF " + node.children.get(2).children.get(0).children.get(0).name + " THEN GOTO G_" + gotoNumber);
+
+                    writer.write(basicLineNumber + " ORCOMPTWO = " + node.children.get(1).children.get(0).children.get(0).name + " * " + node.children.get(2).children.get(0).children.get(0).name);
                     basicLineNumber += 10;
                     writer.write("\n");
+
+                    writer.write(basicLineNumber + " ORCOMPTHREE = ORCOMPONE - ORCOMPTWO");
+                    basicLineNumber += 10;
+                    writer.write("\n");
+
+                    //writer.write(basicLineNumber + " IF " + node.children.get(1).children.get(0).children.get(0).name + " THEN GOTO G_" + gotoNumber);
+                    //basicLineNumber += 10;
+                    //writer.write("\n");
+                    //writer.write(basicLineNumber + " IF " + node.children.get(2).children.get(0).children.get(0).name + " THEN GOTO G_" + gotoNumber);
+                    //basicLineNumber += 10;
+                    //writer.write("\n");
                     //gotoNumber += 1;
+                    node.children.get(0).writtenToBASIC = true;
                     node.children.get(1).writtenToBASIC = true;
                     node.children.get(1).children.get(0).writtenToBASIC = true;
+                    node.children.get(1).children.get(0).children.get(0).writtenToBASIC = true;
+                    node.children.get(2).children.get(0).children.get(0).writtenToBASIC = true;
                 } else{
                     writeToBASICPhaseOne(node.children.get(1), writer);
                     node.children.get(1).writtenToBASIC = true;
                 }
                 node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("not")){
-                if(node.children.get(1).name.equals("VAR")){
+            } else if(node.children.get(0).name.equals("not")){
+                if(node.children.get(1).children.get(0).name.equals("VAR")){
                     writer.write(basicLineNumber + " NOT " + node.children.get(1).children.get(0).children.get(0).name);
                     basicLineNumber += 10;
                     writer.write("\n");
@@ -1146,8 +1251,7 @@ public class Node {
                     node.children.get(1).writtenToBASIC = true;
                 }
                 node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("eq")){
+            } else if(node.children.get(0).name.equals("eq")){
                 //if(node.children.get(1).name.equals("VAR")){
                     writer.write(basicLineNumber + " VARIABLECOMP = " + node.children.get(1).children.get(0).name + " = " + node.children.get(2).children.get(0).name);
                     basicLineNumber += 10;
@@ -1161,23 +1265,20 @@ public class Node {
                     //node.children.get(1).writtenToBASIC = true;
                 //}
                 //node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("T")){
+            } else if(node.children.get(0).name.equals("T")){
                 writer.write(" 1" );
                 //basicLineNumber += 10;
                 //writer.write("\n");
                 node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("F")){
+            } else if(node.children.get(0).name.equals("F")){
                 writer.write(" 0");
                 //basicLineNumber += 10;
                 //writer.write("\n");
                 node.children.get(0).writtenToBASIC = true;
-            }
-            if(node.children.get(0).name.equals("VAR")){
+            } else if(node.children.get(0).name.equals("VAR")){
                 if(node.children.size() > 1 && node.children.get(1).name.equals("BOOLCOMP")){
-                    writer.write(node.children.get(1).children.get(0).name);
-                    writeToBASICPhaseOne(node.children.get(1).children.get(1), writer);
+                    writer.write(basicLineNumber + " VARIABLECOMP = " + node.children.get(0).children.get(0).name + " " + node.children.get(1).children.get(0).name + " " + node.children.get(1).children.get(1).children.get(0).name);
+                    //writeToBASICPhaseOne(node.children.get(1).children.get(1), writer);
                     basicLineNumber += 10;
                     writer.write("\n");
                     node.children.get(0).writtenToBASIC = true;
@@ -1196,10 +1297,10 @@ public class Node {
                 gotoNumber += 1;
                 writeToBASICPhaseOne(node.children.get(1), writer);
 
-                writer.write(basicLineNumber + " VARIABLECOMP =");
-                writeToBASICPhaseOne(node.children.get(2), writer);
-                writer.write( " =");
-                writeToBASICPhaseOne(node.children.get(3).children.get(1), writer);
+                writer.write(basicLineNumber + " VARIABLECOMP = " + node.children.get(2).children.get(0).name + " < " + node.children.get(3).children.get(1).children.get(0).name);
+                //writeToBASICPhaseOne(node.children.get(2), writer);
+                //writer.write( " =");
+                //writeToBASICPhaseOne(node.children.get(3).children.get(1), writer);
                 basicLineNumber += 10;
                 writer.write("\n");
 
@@ -1223,31 +1324,38 @@ public class Node {
                 node.children.get(4).writtenToBASIC = true;
             }
             if(node.children.get(0).name.equals("while")){
-                gotoNumber += 1;
-                writer.write(basicLineNumber + " VARIABLECOMP =");
-                writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
-                node.children.get(1).writtenToBASIC = true;
-                node.children.get(1).children.get(0).writtenToBASIC = true;
-                writer.write( " =");
-                writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
-                node.children.get(1).children.get(0).writtenToBASIC = true;
-                basicLineNumber += 10;
-                writer.write("\n");
+                if(!node.children.get(1).children.get(0).name.equals("VAR")){
+                    gotoNumber += 1;
+                    writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
+                    node.children.get(1).writtenToBASIC = true;
+                    node.children.get(1).children.get(0).writtenToBASIC = true;
+                } else{
+                    gotoNumber += 1;
+                    writer.write(basicLineNumber + " VARIABLECOMP =");
+                    writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
+                    node.children.get(1).writtenToBASIC = true;
+                    node.children.get(1).children.get(0).writtenToBASIC = true;
+                    writer.write( " =");
+                    writeToBASICPhaseOne(node.children.get(1).children.get(0), writer);
+                    node.children.get(1).children.get(0).writtenToBASIC = true;
+                    basicLineNumber += 10;
+                    writer.write("\n");
 
-                int tempGoToNumber = gotoNumber;
-                writer.write(basicLineNumber + " IF VARIABLECOMP THEN GOTO G_" + tempGoToNumber);
-                basicLineNumber += 10;
-                writer.write("\n");
+                    int tempGoToNumber = gotoNumber;
+                    writer.write(basicLineNumber + " IF VARIABLECOMP THEN GOTO G_" + tempGoToNumber);
+                    basicLineNumber += 10;
+                    writer.write("\n");
 
-                writeToBASICPhaseOne(node.children.get(2), writer);
+                    writeToBASICPhaseOne(node.children.get(2), writer);
 
-                writer.write(basicLineNumber + " GOTO G_" + tempGoToNumber + " while");
-                basicLineNumber += 10;
-                writer.write("\n");
-                node.children.get(0).writtenToBASIC = true;
-                node.children.get(1).writtenToBASIC = true;
-                node.children.get(1).children.get(0).writtenToBASIC = true;
-                node.children.get(2).writtenToBASIC = true;
+                    writer.write(basicLineNumber + " GOTO G_" + tempGoToNumber + " while");
+                    basicLineNumber += 10;
+                    writer.write("\n");
+                    node.children.get(0).writtenToBASIC = true;
+                    node.children.get(1).writtenToBASIC = true;
+                    node.children.get(1).children.get(0).writtenToBASIC = true;
+                    node.children.get(2).writtenToBASIC = true;
+                }
             }
             node.writtenToBASIC = true;
         }
@@ -1304,7 +1412,7 @@ public class Node {
                 }
             }
             if(lines[i].contains("G_") && lines[i].contains("ife")){
-                String gotoCheck = lines[i].substring(lines[i].indexOf("G_"), lines[i].lastIndexOf("G_") + 2 + rangeNumber);
+                String gotoCheck = lines[i].substring(lines[i].indexOf("G_"), lines[i].indexOf("G_") + 2 + rangeNumber);
                 gotoCheck = gotoCheck.trim();
                 int updatedLine = -1;
                 for(int j = i-1; j >= 0; j--){
@@ -1332,23 +1440,25 @@ public class Node {
                 for(int j = i-1; j >= 0; j--){
                     if(lines[j].contains(gotoCheck)){
                         if(lines[j].contains("IF")){
-                            lines[i] = lines[i].replace(gotoCheck, "");
+                            /*lines[i] = lines[i].replace(gotoCheck, "");
                             lines[i] = lines[i].replace("if", "");
-                            lines[i] = lines[i].trim();
+                            lines[i] = lines[i].trim();*/
+                            lines[i] = "";
 
                             lines[j] = lines[j].replace(gotoCheck, (i * 10) + "");
-                        } else{
-                            lines[i] = lines[i].replace(gotoCheck, "");
-                            lines[i] = lines[i].replace("ife", "");
-                            lines[i] = lines[i].trim();
-
-                            lines[j] = lines[j].replace(gotoCheck, ((i * 10) + 10) + "");
+                            int tempIndex = i;
+                            for (int k = i+1; k < lines.length; k++) {
+                                lines[tempIndex] = lines[k];
+                                tempIndex++;
+                            }
+                            lines[lines.length-1] = "";
+                            break;
                         }
                     }
                 }
             }
             if(lines[i].contains("P") && lines[i].contains("RETURN")){
-                String gotoCheck = lines[i].substring(lines[i].indexOf("P"), (lines[i].lastIndexOf("P") + 2 + rangeProc));
+                String gotoCheck = lines[i].substring(lines[i].indexOf("P"), (lines[i].lastIndexOf("P") + 1 + rangeProc));
                 gotoCheck = gotoCheck.trim();
                 int firstLineOfProc = -1;
                 for(int j = i-1; j >= 0; j--){
@@ -1370,6 +1480,16 @@ public class Node {
                             lines[i] = lines[i].trim();
 
                             lines[j] = lines[j].replace(gotoCheck, ((i * 10) + 20) + "");
+                        }
+                    }
+                }
+                for(int k = 0; k < lines.length; k++){
+                    if(lines[k].contains(gotoCheck)){
+                        if(lines[k].contains("GOSUB")){
+                            lines[k] = lines[k].replace(gotoCheck, firstLineOfProc + "");
+                            //lines[i] = lines[i].trim();
+
+                            //lines[j] = lines[j].replace(gotoCheck, firstLineOfProc + "");
                         }
                     }
                 }

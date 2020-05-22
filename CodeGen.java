@@ -41,7 +41,7 @@ public class CodeGen {
 
     public static void main(String[] args) {
         //First tested input file
-        String inputName = "f.txt";
+        String inputName = "input.txt";
         new CodeGen(inputName);
 
         //Second tested input file
